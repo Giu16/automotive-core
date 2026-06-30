@@ -248,44 +248,58 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
 
     // Suporte a swipe (arrastar o dedo) no celular
     let touchStartX = 0;
+    let touchStartY = 0;
     let touchCurrentX = 0;
-    let isDragging = false;
+    let isSwiping = false;
+    let directionLocked = false;
 
     track.addEventListener('touchstart', (e) => {
-        touchStartX = e.touches[0].screenX;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
         touchCurrentX = touchStartX;
-        isDragging = true;
+        isSwiping = true;
+        directionLocked = false;
     }, { passive: true });
 
     track.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        touchCurrentX = e.touches[0].screenX;
+        if (!isSwiping) return;
 
-        const diffX = Math.abs(touchCurrentX - touchStartX);
-        const diffY = Math.abs(e.touches[0].screenY - e.touches[0].screenY);
+        touchCurrentX = e.touches[0].clientX;
+        const diffX = touchCurrentX - touchStartX;
+        const diffY = e.touches[0].clientY - touchStartY;
 
-        // Se o movimento for predominantemente horizontal, trava o scroll da página
-        if (diffX > 10) {
+        // Decide a direção do gesto só uma vez, no início do movimento
+        if (!directionLocked && (Math.abs(diffX) > 5 || Math.abs(diffY) > 5)) {
+            directionLocked = true;
+            track.dataset.horizontalSwipe = Math.abs(diffX) > Math.abs(diffY) ? 'true' : 'false';
+        }
+
+        // Se o gesto for horizontal, trava o scroll da página nesse toque
+        if (track.dataset.horizontalSwipe === 'true') {
             e.preventDefault();
         }
     }, { passive: false });
 
     track.addEventListener('touchend', () => {
-        if (!isDragging) return;
-        isDragging = false;
+        if (!isSwiping) return;
+        isSwiping = false;
 
-        const swipeDistance = touchStartX - touchCurrentX;
-        const minSwipeDistance = 50;
+        if (track.dataset.horizontalSwipe === 'true') {
+            const swipeDistance = touchStartX - touchCurrentX;
+            const minSwipeDistance = 40;
 
-        if (swipeDistance > minSwipeDistance) {
-            let nextIndex = currentIndex + 1;
-            if (nextIndex >= slides.length) nextIndex = 0;
-            updateSlider(nextIndex);
-        } else if (swipeDistance < -minSwipeDistance) {
-            let prevIndex = currentIndex - 1;
-            if (prevIndex < 0) prevIndex = slides.length - 1;
-            updateSlider(prevIndex);
+            if (swipeDistance > minSwipeDistance) {
+                let nextIndex = currentIndex + 1;
+                if (nextIndex >= slides.length) nextIndex = 0;
+                updateSlider(nextIndex);
+            } else if (swipeDistance < -minSwipeDistance) {
+                let prevIndex = currentIndex - 1;
+                if (prevIndex < 0) prevIndex = slides.length - 1;
+                updateSlider(prevIndex);
+            }
         }
+
+        track.dataset.horizontalSwipe = '';
     });
 }
 
