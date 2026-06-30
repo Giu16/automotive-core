@@ -1610,6 +1610,7 @@ button {
     .mobile-toggle { display: flex; }
     .hero-bg {
         background-position: left center;
+        background-size: 150%;
     }
     .mobile-toggle.active span:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
     .mobile-toggle.active span:nth-child(2) { opacity: 0; }
