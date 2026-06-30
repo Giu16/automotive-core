@@ -1619,7 +1619,7 @@ button {
     .hero-title { font-size: 5.0rem; }
     .hero {
     min-height: 100vh;
-    padding: 200px 0 100px;
+    padding: 100px 0 100px;
     align-items: center;
     }
     .hero-stats { grid-template-columns: 1fr; }
