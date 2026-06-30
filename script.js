@@ -243,11 +243,14 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
     measureSlideWidth();
 
     nextBtn.addEventListener('click', () => {
+        const containerWidth = track.parentElement.getBoundingClientRect().width;
+        const cardsPerView = Math.round(containerWidth / slideWidth) || 1;
+        const maxIndex = Math.max(slides.length - cardsPerView, 0);
         let nextIndex = currentIndex + 1;
-        if (nextIndex >= slides.length) nextIndex = 0;
+        if (nextIndex > maxIndex) nextIndex = 0;
         updateSlider(nextIndex);
     });
-
+    
     prevBtn.addEventListener('click', () => {
         let prevIndex = currentIndex - 1;
         if (prevIndex < 0) prevIndex = slides.length - 1;
