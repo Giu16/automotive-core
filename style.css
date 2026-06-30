@@ -1616,7 +1616,7 @@ button {
     .mobile-toggle.active span:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
 
     /* Topo (Hero) */
-    .hero-title { font-size: 5.0rem; }
+    .hero-title { font-size: 2.8rem; }
     .hero {
     min-height: 90vh;
     padding: 100px 0 100px;
