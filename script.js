@@ -216,6 +216,8 @@ const dotsContainer = document.querySelector('.carousel-dots');
 if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
     let currentIndex = 0;
     let slideWidth = 0;
+    let isAnimating = false;
+    let measured = false;
 
     slides.forEach((_, i) => {
         const dot = document.createElement('button');
@@ -226,41 +228,96 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
     const dots = Array.from(dotsContainer.querySelectorAll('.carousel-dot'));
 
     const measureSlideWidth = () => {
+        const w = slides[0].getBoundingClientRect().width;
+        if (w === 0) return false;
         const trackStyles = window.getComputedStyle(track);
         const gap = parseFloat(trackStyles.columnGap || trackStyles.gap) || 0;
-        slideWidth = slides[0].getBoundingClientRect().width + gap;
+        slideWidth = w + gap;
+        return true;
+    };
+
+    const getMaxIndex = () => {
+        const containerWidth = track.parentElement.getBoundingClientRect().width;
+        const cardsPerView = Math.round(containerWidth / slideWidth) || 1;
+        return Math.max(slides.length - cardsPerView, 0);
     };
 
     const updateSlider = (index) => {
-        track.style.transform = `translateX(-${index * slideWidth}px)`;
+        if (isAnimating) return;
+        isAnimating = true;
+
+        const maxIndex = getMaxIndex();
+        const clampedIndex = Math.min(index, maxIndex);
+
+        track.style.transform = `translateX(-${clampedIndex * slideWidth}px)`;
 
         dots.forEach(dot => dot.classList.remove('active'));
-        dots[index].classList.add('active');
+        dots[Math.min(index, dots.length - 1)].classList.add('active');
 
-        currentIndex = index;
+        currentIndex = clampedIndex;
+
+        const onTransitionEnd = () => {
+            isAnimating = false;
+            track.removeEventListener('transitionend', onTransitionEnd);
+        };
+        track.addEventListener('transitionend', onTransitionEnd);
+        setTimeout(() => { isAnimating = false; }, 400);
     };
 
-    measureSlideWidth();
+    // Mede só quando o carrossel está visível na tela
+    const carouselObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && !measured) {
+                const success = measureSlideWidth();
+                if (success) {
+                    measured = true;
+                    updateSlider(0);
+                    carouselObserver.disconnect();
+                }
+            }
+        });
+    }, { threshold: 0.1 });
+
+    carouselObserver.observe(track);
+
+    // Rede de segurança: se o load terminar e ainda não mediu, mede agora
+    window.addEventListener('load', () => {
+        if (!measured) {
+            const success = measureSlideWidth();
+            if (success) {
+                measured = true;
+                updateSlider(0);
+            }
+        }
+    });
+
+    window.addEventListener('resize', () => {
+        measured = false;
+        measureSlideWidth();
+        updateSlider(currentIndex);
+    });
 
     nextBtn.addEventListener('click', () => {
+        if (!measured) return;
+        const maxIndex = getMaxIndex();
         let nextIndex = currentIndex + 1;
-        if (nextIndex >= slides.length) nextIndex = 0;
+        if (nextIndex > maxIndex) nextIndex = 0;
         updateSlider(nextIndex);
     });
 
     prevBtn.addEventListener('click', () => {
+        if (!measured) return;
+        const maxIndex = getMaxIndex();
         let prevIndex = currentIndex - 1;
-        if (prevIndex < 0) prevIndex = slides.length - 1;
+        if (prevIndex < 0) prevIndex = maxIndex;
         updateSlider(prevIndex);
     });
 
     dots.forEach((dot, index) => {
-        dot.addEventListener('click', () => updateSlider(index));
-    });
-
-    window.addEventListener('resize', () => {
-        measureSlideWidth();
-        updateSlider(currentIndex);
+        dot.addEventListener('click', () => {
+            if (!measured) return;
+            updateSlider(index);
+        });
     });
 
     // Suporte a swipe (arrastar o dedo) no celular
@@ -276,8 +333,8 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
     };
 
     track.addEventListener('touchstart', (e) => {
-     
-       touchStartX = e.touches[0].clientX;
+        if (isAnimating || !measured) return;
+        touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         touchCurrentX = touchStartX;
         isSwiping = true;
@@ -286,7 +343,6 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
 
     track.addEventListener('touchmove', (e) => {
         if (!isSwiping) return;
-
         touchCurrentX = e.touches[0].clientX;
         const diffX = touchCurrentX - touchStartX;
         const diffY = e.touches[0].clientY - touchStartY;
@@ -308,12 +364,14 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
             const minSwipeDistance = 40;
 
             if (swipeDistance > minSwipeDistance) {
+                const maxIndex = getMaxIndex();
                 let nextIndex = currentIndex + 1;
-                if (nextIndex >= slides.length) nextIndex = 0;
+                if (nextIndex > maxIndex) nextIndex = 0;
                 updateSlider(nextIndex);
             } else if (swipeDistance < -minSwipeDistance) {
+                const maxIndex = getMaxIndex();
                 let prevIndex = currentIndex - 1;
-                if (prevIndex < 0) prevIndex = slides.length - 1;
+                if (prevIndex < 0) prevIndex = maxIndex;
                 updateSlider(prevIndex);
             }
         }
