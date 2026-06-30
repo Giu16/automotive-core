@@ -1619,7 +1619,7 @@ button {
     .hero-title { font-size: 2.8rem; }
     .hero {
     min-height: 90vh;
-    padding: 100px 0 100px;
+    padding: 100px 0;
     align-items: center;
     }
     .hero-stats { grid-template-columns: 1fr; }
@@ -1716,7 +1716,7 @@ button {
 
 @media (max-width: 480px) {
     .section-title { font-size: 1.75rem; }
-    .hero-title { font-size: 2.8rem; }
+    .hero-title { font-size: 3.2rem; }
     .hero-subtitle { font-size: 18px; }
     .stat-number { font-size: 1.5rem; }
     .about-features { grid-template-columns: 1fr; }
