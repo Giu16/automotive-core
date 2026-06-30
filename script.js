@@ -226,7 +226,9 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
     const dots = Array.from(dotsContainer.querySelectorAll('.carousel-dot'));
 
     const measureSlideWidth = () => {
-        slideWidth = slides[0].getBoundingClientRect().width + 24;
+        const trackStyles = window.getComputedStyle(track);
+        const gap = parseFloat(trackStyles.columnGap || trackStyles.gap) || 0;
+        slideWidth = slides[0].getBoundingClientRect().width + gap;
     };
 
     const updateSlider = (index) => {
