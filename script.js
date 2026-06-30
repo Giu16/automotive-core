@@ -261,56 +261,65 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
         updateSlider(currentIndex);
     });
 
-// ===================================
-// Swipe do Carrossel (versão estável)
-// ===================================
+    // Suporte a swipe (arrastar o dedo) no celular
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchCurrentX = 0;
+    let isSwiping = false;
+    let isHorizontalSwipe = false;
 
-let touchStartX = 0;
-let touchStartY = 0;
-let touchEndX = 0;
-let touchEndY = 0;
+    const resetSwipeState = () => {
+        isSwiping = false;
+        isHorizontalSwipe = false;
+    };
 
-const minSwipeDistance = 50;
+    track.addEventListener('touchstart', (e) => {
+     
+       touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchCurrentX = touchStartX;
+        isSwiping = true;
+        isHorizontalSwipe = false;
+    }, { passive: true });
 
-track.addEventListener('touchstart', (e) => {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-}, { passive: true });
+    track.addEventListener('touchmove', (e) => {
+        if (!isSwiping) return;
 
-track.addEventListener('touchend', (e) => {
+        touchCurrentX = e.touches[0].clientX;
+        const diffX = touchCurrentX - touchStartX;
+        const diffY = e.touches[0].clientY - touchStartY;
 
-    touchEndX = e.changedTouches[0].clientX;
-    touchEndY = e.changedTouches[0].clientY;
-
-    const diffX = touchEndX - touchStartX;
-    const diffY = touchEndY - touchStartY;
-
-    // Ignora quando o movimento é mais vertical que horizontal
-    if (Math.abs(diffY) > Math.abs(diffX)) return;
-
-    if (Math.abs(diffX) < minSwipeDistance) return;
-
-    if (diffX < 0) {
-        let nextIndex = currentIndex + 1;
-
-        if (nextIndex >= slides.length) {
-            nextIndex = 0;
+        if (Math.abs(diffX) > 5 || Math.abs(diffY) > 5) {
+            isHorizontalSwipe = Math.abs(diffX) > Math.abs(diffY);
         }
 
-        updateSlider(nextIndex);
+        if (isHorizontalSwipe) {
+            e.preventDefault();
+        }
+    }, { passive: false });
 
-    } else {
+    track.addEventListener('touchend', () => {
+        if (!isSwiping) return;
 
-        let prevIndex = currentIndex - 1;
+        if (isHorizontalSwipe) {
+            const swipeDistance = touchStartX - touchCurrentX;
+            const minSwipeDistance = 40;
 
-        if (prevIndex < 0) {
-            prevIndex = slides.length - 1;
+            if (swipeDistance > minSwipeDistance) {
+                let nextIndex = currentIndex + 1;
+                if (nextIndex >= slides.length) nextIndex = 0;
+                updateSlider(nextIndex);
+            } else if (swipeDistance < -minSwipeDistance) {
+                let prevIndex = currentIndex - 1;
+                if (prevIndex < 0) prevIndex = slides.length - 1;
+                updateSlider(prevIndex);
+            }
         }
 
-        updateSlider(prevIndex);
-    }
+        resetSwipeState();
+    });
 
-}, { passive: true });
+    track.addEventListener('touchcancel', resetSwipeState);
 }
 
 // ===================================
