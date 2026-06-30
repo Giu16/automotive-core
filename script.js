@@ -250,7 +250,7 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
         if (nextIndex > maxIndex) nextIndex = 0;
         updateSlider(nextIndex);
     });
-    
+
     prevBtn.addEventListener('click', () => {
         let prevIndex = currentIndex - 1;
         if (prevIndex < 0) prevIndex = slides.length - 1;
@@ -333,6 +333,8 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
 document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add('loaded');
     console.log('Zyron Auto - Landing Page Loaded Successfully');
+    const yearEl = document.getElementById('footer-year');
+    if (yearEl) yearEl.textContent = new Date().getFullYear();
 });
 
 // ===================================
