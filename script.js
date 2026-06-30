@@ -242,19 +242,6 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
 
     measureSlideWidth();
 
-    // Garante medição correta após fontes e imagens carregarem totalmente
-    window.addEventListener('load', () => {
-        measureSlideWidth();
-        updateSlider(currentIndex);
-    });
-
-    if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(() => {
-            measureSlideWidth();
-            updateSlider(currentIndex);
-        });
-    }
-
     nextBtn.addEventListener('click', () => {
         let nextIndex = currentIndex + 1;
         if (nextIndex >= slides.length) nextIndex = 0;
