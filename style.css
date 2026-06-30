@@ -225,7 +225,7 @@ button {
     left: 50%;
     transform: translateX(-50%);
     width: 80%;
-    height: 2px;
+    height: 1px;
     background: linear-gradient(
         to right,
         transparent 0%,
@@ -233,7 +233,7 @@ button {
         var(--accent-color) 70%,
         transparent 100%
     );
-    opacity: 0.5;
+    opacity: 0.3;
 }
 
 .header .container {
