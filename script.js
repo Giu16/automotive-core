@@ -240,7 +240,7 @@ if (track && slides.length > 0 && dotsContainer) {
         dotsContainer.appendChild(dot);
         
         // Garante que cada card "puxe" o scroll nativo (snap)
-        slide.style.scrollSnapAlign = 'center'; // Centraliza o card na tela ao deslizar
+        slide.style.scrollSnapAlign = 'center';
         slide.style.flexShrink = '0';
     });
 
@@ -254,7 +254,14 @@ if (track && slides.length > 0 && dotsContainer) {
 
     if (nextBtn) {
         nextBtn.addEventListener('click', () => {
-            track.scrollBy({ left: getSlideWidth(), behavior: 'smooth' });
+            const slideWidth = getSlideWidth();
+            const lastSlide = (slides.length - 1) * slideWidth;
+
+            if (track.scrollLeft >= lastSlide - 5) {
+                track.scrollTo({ left: 0, behavior: 'smooth' });
+            } else {
+                track.scrollBy({ left: slideWidth, behavior: 'smooth' });
+            }
         });
     }
 
@@ -272,28 +279,19 @@ if (track && slides.length > 0 && dotsContainer) {
     });
 
     // 4. ATUALIZAR DOTS AUTOMATICAMENTE AO DESLIZAR O DEDO
-    // O IntersectionObserver detecta perfeitamente qual card está visível sem bugar o touch
     const observerOptions = {
         root: track,
-        threshold: 0.6 // Quando 60% do card aparecer, ele atualiza a bolinha
+        threshold: 0.6
     };
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const index = slides.indexOf(entry.target);
-                
+
                 // Atualiza a bolinha ativa
                 dots.forEach(dot => dot.classList.remove('active'));
                 if (dots[index]) dots[index].classList.add('active');
-
-                // LÓGICA DO LOOP:
-                // Se o usuário chegou no último card, espera 2 segundos e volta pro primeiro
-                if (index === slides.length - 1) {
-                    setTimeout(() => {
-                        track.scrollTo({ left: 0, behavior: 'smooth' });
-                    }, 2000); // 2000ms = 2 segundos de pausa no último card
-                }
             }
         });
     }, observerOptions);
