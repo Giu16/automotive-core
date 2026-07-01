@@ -301,48 +301,49 @@ if (track && originalSlides.length > 0 && dotsContainer) {
         });
     });
 
-    // 5. OBSERVER DE LOOP (ISOLADO POR DISPOSITIVO)
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    const observerOptions = { root: track, threshold: 0.6 };
-
-    const stopScroll = () => {
-        window.clearTimeout(isScrolling);
-        isScrolling = setTimeout(() => {
-            track.style.scrollSnapType = 'none';
-            track.style.scrollBehavior = 'auto';
-            track.scrollTo({ left: 0 });
-            
-            // HACK DE RENDERIZAÇÃO: Aplicado APENAS no mobile
-            if (isTouchDevice) {
-                const firstCard = track.querySelector('.review-card');
-                firstCard.style.willChange = 'transform';
-                firstCard.style.transform = 'translateZ(0)';
-                void track.offsetWidth; 
-                setTimeout(() => {
-                    firstCard.style.willChange = 'auto';
-                    firstCard.style.transform = 'none';
-                }, 50);
-            }
-            
-            track.style.scrollBehavior = 'smooth';
-            track.style.scrollSnapType = 'x mandatory';
-        }, 150);
+    // 5. OBSERVER DE LOOP
+    const observerOptions = {
+        root: track,
+        threshold: 0.6 
     };
 
-    let isScrolling;
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const index = allSlides.indexOf(entry.target);
                 
+                // Se chegou no clone (último card)
                 if (index === allSlides.length - 1) {
+                    // Mantém a primeira bolinha acesa para enganar o usuário
                     dots.forEach(dot => dot.classList.remove('active'));
                     dots[0].classList.add('active');
-                    
-                    // Executa a lógica de loop
+
+                    // LÓGICA DO TELEPORTE INVISÍVEL
+                    // Escuta quando a inércia do scroll parar completamente e teleporta.
+                    let isScrolling;
+                    const stopScroll = () => {
+                        window.clearTimeout(isScrolling);
+                        isScrolling = setTimeout(() => {
+                            // Tira as travas do CSS e volta pro 0 silenciosamente
+                            track.style.scrollSnapType = 'none';
+                            track.style.scrollBehavior = 'auto';
+                            track.scrollTo({ left: 0 });
+                            
+                            // Força o DOM a processar a mudança imediatamente
+                            void track.offsetWidth;
+                            
+                            // Devolve a fluidez
+                            track.style.scrollBehavior = 'smooth';
+                            track.style.scrollSnapType = 'x mandatory';
+                            
+                            track.removeEventListener('scroll', stopScroll);
+                        }, 150); // 150ms sem movimento = inércia parou
+                    };
                     track.addEventListener('scroll', stopScroll, { passive: true });
-                    stopScroll();
+                    stopScroll(); // Inicia imediatamente caso a rolagem já tenha parado
+
                 } else {
+                    // Atualiza a bolinha normalmente para os cards verdadeiros
                     dots.forEach(dot => dot.classList.remove('active'));
                     if (dots[index]) dots[index].classList.add('active');
                 }
