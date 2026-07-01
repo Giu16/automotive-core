@@ -205,25 +205,23 @@ const highlightNavigation = () => {
 window.addEventListener('scroll', highlightNavigation);
 
 // ===================================
-// Testimonials Native Scroll Carousel (Bypass Safari Bug)
+// Testimonials Native Scroll Carousel (Loop Infinito Real)
 // ===================================
 const track = document.querySelector('.carousel-track');
-const slides = Array.from(document.querySelectorAll('.review-card'));
+const originalSlides = Array.from(document.querySelectorAll('.review-card'));
 const nextBtn = document.querySelector('.carousel-btn.next');
 const prevBtn = document.querySelector('.carousel-btn.prev');
 const dotsContainer = document.querySelector('.carousel-dots');
 
-if (track && slides.length > 0 && dotsContainer) {
+if (track && originalSlides.length > 0 && dotsContainer) {
     // 1. FORÇANDO O COMPORTAMENTO NATIVO VIA JS
-    // Transformamos o track num container de scroll nativo (perfeito no Safari)
     track.style.display = 'flex';
     track.style.overflowX = 'auto';
     track.style.scrollSnapType = 'x mandatory';
     track.style.scrollBehavior = 'smooth';
-    track.style.scrollbarWidth = 'none'; // Esconde scrollbar no Firefox
-    track.style.webkitOverflowScrolling = 'touch'; // Fluidez máxima no iOS
+    track.style.scrollbarWidth = 'none'; 
+    track.style.webkitOverflowScrolling = 'touch'; 
     
-    // Injeta estilo para esconder a scrollbar no Chrome/Safari
     if (!document.getElementById('carousel-hide-scroll')) {
         const style = document.createElement('style');
         style.id = 'carousel-hide-scroll';
@@ -231,74 +229,129 @@ if (track && slides.length > 0 && dotsContainer) {
         document.head.appendChild(style);
     }
 
-    // 2. RENDERIZA AS BOLINHAS E PREPARA OS CARDS
+    // 2. O TRUQUE DO CLONE PARA O LOOP INFINITO
+    // Clonamos o primeiro slide e jogamos pro final
+    const firstClone = originalSlides[0].cloneNode(true);
+    firstClone.classList.add('is-clone'); // Apenas para referência no HTML
+    track.appendChild(firstClone);
+    
+    // Atualizamos a lista de slides com o clone incluso
+    const allSlides = Array.from(document.querySelectorAll('.review-card'));
+
+    // 3. RENDERIZA AS BOLINHAS (apenas para a quantidade original)
     dotsContainer.innerHTML = '';
-    slides.forEach((slide, i) => {
+    originalSlides.forEach((slide, i) => {
         const dot = document.createElement('button');
         dot.classList.add('carousel-dot');
         if (i === 0) dot.classList.add('active');
         dotsContainer.appendChild(dot);
-        
-        // Garante que cada card "puxe" o scroll nativo (snap)
-        slide.style.scrollSnapAlign = 'center'; // Centraliza o card na tela ao deslizar
-        slide.style.flexShrink = '0';
     });
 
     const dots = Array.from(dotsContainer.querySelectorAll('.carousel-dot'));
 
-    // 3. LÓGICA DE NAVEGAÇÃO POR BOTÕES E DOTS
+    allSlides.forEach((slide) => {
+        slide.style.scrollSnapAlign = 'center';
+        slide.style.flexShrink = '0';
+    });
+
     const getSlideWidth = () => {
         const gap = parseFloat(window.getComputedStyle(track).gap) || 0;
-        return slides[0].offsetWidth + gap;
+        return originalSlides[0].offsetWidth + gap;
     };
 
+    // 4. LÓGICA DE NAVEGAÇÃO POR BOTÕES
     if (nextBtn) {
         nextBtn.addEventListener('click', () => {
-            track.scrollBy({ left: getSlideWidth(), behavior: 'smooth' });
+            const slideWidth = getSlideWidth();
+            const maxScroll = (allSlides.length - 1) * slideWidth;
+            
+            // Se já estiver no clone, faz o teleporte primeiro antes de animar pro 2
+            if (track.scrollLeft >= maxScroll - 10) {
+                track.style.scrollSnapType = 'none';
+                track.style.scrollBehavior = 'auto';
+                track.scrollLeft = 0;
+                void track.offsetWidth; // Força render
+                track.style.scrollBehavior = 'smooth';
+                track.style.scrollSnapType = 'x mandatory';
+            }
+            track.scrollBy({ left: slideWidth, behavior: 'smooth' });
         });
     }
 
     if (prevBtn) {
         prevBtn.addEventListener('click', () => {
-            track.scrollBy({ left: -getSlideWidth(), behavior: 'smooth' });
+            const slideWidth = getSlideWidth();
+            
+            // Se tentar voltar do card 1, teleporta pro clone e anima pro card 3
+            if (track.scrollLeft <= 10) {
+                track.style.scrollSnapType = 'none';
+                track.style.scrollBehavior = 'auto';
+                track.scrollLeft = (allSlides.length - 1) * slideWidth;
+                void track.offsetWidth;
+                track.style.scrollBehavior = 'smooth';
+                track.style.scrollSnapType = 'x mandatory';
+            }
+            track.scrollBy({ left: -slideWidth, behavior: 'smooth' });
         });
     }
 
     dots.forEach((dot, index) => {
         dot.addEventListener('click', () => {
-            const targetScroll = index * getSlideWidth();
-            track.scrollTo({ left: targetScroll, behavior: 'smooth' });
+            track.scrollTo({ left: index * getSlideWidth(), behavior: 'smooth' });
         });
     });
 
-    // 4. ATUALIZAR DOTS AUTOMATICAMENTE AO DESLIZAR O DEDO
-    // O IntersectionObserver detecta perfeitamente qual card está visível sem bugar o touch
+    // 5. OBSERVER DE LOOP
     const observerOptions = {
         root: track,
-        threshold: 0.6 // Quando 60% do card aparecer, ele atualiza a bolinha
+        threshold: 0.6 
     };
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                const index = slides.indexOf(entry.target);
+                const index = allSlides.indexOf(entry.target);
                 
-                // Atualiza a bolinha ativa
-                dots.forEach(dot => dot.classList.remove('active'));
-                if (dots[index]) dots[index].classList.add('active');
+                // Se chegou no clone (último card)
+                if (index === allSlides.length - 1) {
+                    // Mantém a primeira bolinha acesa para enganar o usuário
+                    dots.forEach(dot => dot.classList.remove('active'));
+                    dots[0].classList.add('active');
 
-                // LÓGICA DO LOOP:
-                // Se o usuário chegou no último card, espera 2 segundos e volta pro primeiro
-                if (index === slides.length - 1) {
-                    setTimeout(() => {
-                        track.scrollTo({ left: 0, behavior: 'smooth' });
-                    }, 2000); // 2000ms = 2 segundos de pausa no último card
+                    // LÓGICA DO TELEPORTE INVISÍVEL
+                    // Escuta quando a inércia do scroll parar completamente e teleporta.
+                    let isScrolling;
+                    const stopScroll = () => {
+                        window.clearTimeout(isScrolling);
+                        isScrolling = setTimeout(() => {
+                            // Tira as travas do CSS e volta pro 0 silenciosamente
+                            track.style.scrollSnapType = 'none';
+                            track.style.scrollBehavior = 'auto';
+                            track.scrollTo({ left: 0 });
+                            
+                            // Força o DOM a processar a mudança imediatamente
+                            void track.offsetWidth;
+                            
+                            // Devolve a fluidez
+                            track.style.scrollBehavior = 'smooth';
+                            track.style.scrollSnapType = 'x mandatory';
+                            
+                            track.removeEventListener('scroll', stopScroll);
+                        }, 150); // 150ms sem movimento = inércia parou
+                    };
+                    track.addEventListener('scroll', stopScroll, { passive: true });
+                    stopScroll(); // Inicia imediatamente caso a rolagem já tenha parado
+
+                } else {
+                    // Atualiza a bolinha normalmente para os cards verdadeiros
+                    dots.forEach(dot => dot.classList.remove('active'));
+                    if (dots[index]) dots[index].classList.add('active');
                 }
             }
         });
     }, observerOptions);
 
-    slides.forEach(slide => observer.observe(slide));
+    allSlides.forEach(slide => observer.observe(slide));
 }
 
 // ===================================
