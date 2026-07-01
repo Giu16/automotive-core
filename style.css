@@ -1650,7 +1650,7 @@ button {
     /* Topo (Hero) */
     .hero-title { font-size: 2.8rem; }
     .hero {
-    min-height: 100vh;
+    min-height: 110vh;
     padding: 100px 0;
     align-items: center;
     }
