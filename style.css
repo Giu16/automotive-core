@@ -1652,9 +1652,9 @@ button {
     .hero-bg {
         background-position: left center;
     }
-    .mobile-toggle.active span:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+    .mobile-toggle.active span:nth-child(1) { top: 17px; transform: rotate(45deg); }
     .mobile-toggle.active span:nth-child(2) { opacity: 0; }
-    .mobile-toggle.active span:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+    .mobile-toggle.active span:nth-child(3) { top: 17px; transform: rotate(-45deg); }
 
     /* Topo (Hero) */
     .hero-title { font-size: 2.8rem; }
