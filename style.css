@@ -88,7 +88,7 @@ body {
     font-family: var(--font-body);
     color: var(--dark-color);
     line-height: 1.6;
-    background: var(--surface-color);
+    background: var(--dark-color);
 }
 
 img { max-width: 100%; height: auto; display: block; }
