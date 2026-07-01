@@ -322,23 +322,33 @@ if (track && originalSlides.length > 0 && dotsContainer) {
                     // Escuta quando a inércia do scroll parar completamente e teleporta.
                     let isScrolling;
                     const stopScroll = () => {
-                        window.clearTimeout(isScrolling);
-                        isScrolling = setTimeout(() => {
-                            // Tira as travas do CSS e volta pro 0 silenciosamente
-                            track.style.scrollSnapType = 'none';
-                            track.style.scrollBehavior = 'auto';
-                            track.scrollTo({ left: 0 });
-                            
-                            // Força o DOM a processar a mudança imediatamente
-                            void track.offsetWidth;
-                            
-                            // Devolve a fluidez
+                    window.clearTimeout(isScrolling);
+                    isScrolling = setTimeout(() => {
+                        track.style.scrollSnapType = 'none';
+                        track.style.scrollBehavior = 'auto';
+                        
+                        // 1. O Teleporte
+                        track.scrollTo({ left: 0 });
+                        
+                        // 2. A MÁGICA PARA O CHROME
+                        // Força o navegador a descartar a cache visual desse card
+                        const firstCard = track.querySelector('.review-card');
+                        firstCard.style.willChange = 'transform'; // Notifica o Chrome de uma mudança iminente
+                        firstCard.style.transform = 'translateZ(0)'; // Força uma nova camada (GPU)
+                        
+                        void track.offsetWidth; // Reflow forçado
+                        
+                        // 3. Limpeza
+                        setTimeout(() => {
+                            firstCard.style.willChange = 'auto';
+                            firstCard.style.transform = 'none';
                             track.style.scrollBehavior = 'smooth';
                             track.style.scrollSnapType = 'x mandatory';
-                            
-                            track.removeEventListener('scroll', stopScroll);
-                        }, 150); // 150ms sem movimento = inércia parou
-                    };
+                        }, 50);
+
+                        track.removeEventListener('scroll', stopScroll);
+                    }, 150);
+                };
                     track.addEventListener('scroll', stopScroll, { passive: true });
                     stopScroll(); // Inicia imediatamente caso a rolagem já tenha parado
 
