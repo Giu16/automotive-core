@@ -1642,7 +1642,7 @@ button {
         padding: 20px;
         gap: 0;
     }
-    .nav-list li { border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .nav-list li:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.08); }    
     .nav-link {
         display: block;
         padding: 15px 0;
