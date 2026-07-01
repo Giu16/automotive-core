@@ -280,24 +280,33 @@ if (track && originalSlides.length > 0 && dotsContainer) {
         });
     });
 
-    // 4. OBSERVER PARA O LOOP E DOTS
-    const observerOptions = { root: track, threshold: 0.6 };
+    // 4. OBSERVER BLINDADO PARA LOOP INFINITO
+    const observerOptions = { root: track, threshold: 0.8 }; // Aumentei o threshold para 0.8 para ser mais preciso
+    let isResetting = false; // Flag para travar execuções múltiplas
+
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            if (entry.isIntersecting) {
+            if (entry.isIntersecting && !isResetting) {
                 const index = allSlides.indexOf(entry.target);
                 
-                // Se chegou no slide clonado (o último), reseta para o primeiro
+                // Se chegou no clone (o último slide extra)
                 if (index === allSlides.length - 1) {
-                    setTimeout(() => {
-                        track.scrollTo({ left: 0, behavior: 'auto' });
-                    }, 500); // Pequeno delay para a transição terminar
+                    isResetting = true; // Trava o observador
+                    
+                    // Reset instantâneo (behavior: 'auto')
+                    track.scrollTo({ left: 0, behavior: 'auto' });
+                    
+                    // Reseta a flag após um curto período para permitir novos movimentos
+                    setTimeout(() => { isResetting = false; }, 500);
+                    
+                    // Força a bolinha 1 ficar ativa
+                    dots.forEach(d => d.classList.remove('active'));
+                    dots[0].classList.add('active');
+                } else {
+                    // Atualiza bolinhas normalmente
+                    dots.forEach(d => d.classList.remove('active'));
+                    if (dots[index]) dots[index].classList.add('active');
                 }
-
-                // Atualiza bolinhas
-                const dotIndex = index >= originalSlides.length ? 0 : index;
-                dots.forEach(d => d.classList.remove('active'));
-                if (dots[dotIndex]) dots[dotIndex].classList.add('active');
             }
         });
     }, observerOptions);
