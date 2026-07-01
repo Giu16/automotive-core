@@ -205,24 +205,25 @@ const highlightNavigation = () => {
 window.addEventListener('scroll', highlightNavigation);
 
 // ===================================
-// Testimonials Infinite Carousel (Safari Proof - De Verdade)
+// Testimonials Native Scroll Carousel (Bypass Safari Bug)
 // ===================================
 const track = document.querySelector('.carousel-track');
-const originalSlides = Array.from(document.querySelectorAll('.review-card'));
+const slides = Array.from(document.querySelectorAll('.review-card'));
 const nextBtn = document.querySelector('.carousel-btn.next');
 const prevBtn = document.querySelector('.carousel-btn.prev');
 const dotsContainer = document.querySelector('.carousel-dots');
 
-if (track && originalSlides.length > 0 && dotsContainer) {
-    // 1. FORÇANDO COMPORTAMENTO NATIVO
+if (track && slides.length > 0 && dotsContainer) {
+    // 1. FORÇANDO O COMPORTAMENTO NATIVO VIA JS
+    // Transformamos o track num container de scroll nativo (perfeito no Safari)
     track.style.display = 'flex';
     track.style.overflowX = 'auto';
     track.style.scrollSnapType = 'x mandatory';
     track.style.scrollBehavior = 'smooth';
-    track.style.scrollbarWidth = 'none';
-    track.style.webkitOverflowScrolling = 'touch';
-
-    // Injeta CSS para esconder scrollbar
+    track.style.scrollbarWidth = 'none'; // Esconde scrollbar no Firefox
+    track.style.webkitOverflowScrolling = 'touch'; // Fluidez máxima no iOS
+    
+    // Injeta estilo para esconder a scrollbar no Chrome/Safari
     if (!document.getElementById('carousel-hide-scroll')) {
         const style = document.createElement('style');
         style.id = 'carousel-hide-scroll';
@@ -230,43 +231,30 @@ if (track && originalSlides.length > 0 && dotsContainer) {
         document.head.appendChild(style);
     }
 
-    // 2. CLONAGEM PARA LOOP INFINITO
-    const firstClone = originalSlides[0].cloneNode(true);
-    track.appendChild(firstClone);
-    
-    const allSlides = Array.from(document.querySelectorAll('.review-card'));
-
+    // 2. RENDERIZA AS BOLINHAS E PREPARA OS CARDS
     dotsContainer.innerHTML = '';
-    originalSlides.forEach((_, i) => {
+    slides.forEach((slide, i) => {
         const dot = document.createElement('button');
         dot.classList.add('carousel-dot');
         if (i === 0) dot.classList.add('active');
         dotsContainer.appendChild(dot);
-    });
-    const dots = Array.from(dotsContainer.querySelectorAll('.carousel-dot'));
-
-    allSlides.forEach((slide) => {
-        slide.style.scrollSnapAlign = 'center';
+        
+        // Garante que cada card "puxe" o scroll nativo (snap)
+        slide.style.scrollSnapAlign = 'center'; // Centraliza o card na tela ao deslizar
         slide.style.flexShrink = '0';
     });
 
-    // 3. LÓGICA DE NAVEGAÇÃO
+    const dots = Array.from(dotsContainer.querySelectorAll('.carousel-dot'));
+
+    // 3. LÓGICA DE NAVEGAÇÃO POR BOTÕES E DOTS
     const getSlideWidth = () => {
         const gap = parseFloat(window.getComputedStyle(track).gap) || 0;
-        return originalSlides[0].offsetWidth + gap;
+        return slides[0].offsetWidth + gap;
     };
 
     if (nextBtn) {
         nextBtn.addEventListener('click', () => {
-            // Correção no nextBtn para evitar o mesmo glitch no pulo manual
-            if (Math.ceil(track.scrollLeft) >= (allSlides.length - 1) * getSlideWidth() - 10) {
-                track.style.scrollSnapType = 'none';
-                track.scrollLeft = 0;
-                void track.offsetWidth; // Força reflow instantâneo
-                track.style.scrollSnapType = 'x mandatory';
-            } else {
-                track.scrollBy({ left: getSlideWidth(), behavior: 'smooth' });
-            }
+            track.scrollBy({ left: getSlideWidth(), behavior: 'smooth' });
         });
     }
 
@@ -278,50 +266,39 @@ if (track && originalSlides.length > 0 && dotsContainer) {
 
     dots.forEach((dot, index) => {
         dot.addEventListener('click', () => {
-            track.scrollTo({ left: index * getSlideWidth(), behavior: 'smooth' });
+            const targetScroll = index * getSlideWidth();
+            track.scrollTo({ left: targetScroll, behavior: 'smooth' });
         });
     });
 
-    // 4. OBSERVER BLINDADO CONTRA O WEBKIT
-    // Threshold reduzido para 0.7 para garantir o disparo no mobile
-    const observerOptions = { root: track, threshold: 0.7 }; 
-    let isResetting = false;
+    // 4. ATUALIZAR DOTS AUTOMATICAMENTE AO DESLIZAR O DEDO
+    // O IntersectionObserver detecta perfeitamente qual card está visível sem bugar o touch
+    const observerOptions = {
+        root: track,
+        threshold: 0.6 // Quando 60% do card aparecer, ele atualiza a bolinha
+    };
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            if (entry.isIntersecting && !isResetting) {
-                const index = allSlides.indexOf(entry.target);
+            if (entry.isIntersecting) {
+                const index = slides.indexOf(entry.target);
                 
-                // Se chegou no clone (o último slide extra)
-                if (index === allSlides.length - 1) {
-                    isResetting = true; 
-                    
-                    // O PULO DO GATO PRO SAFARI:
-                    // Remove o snap antes de reposicionar.
-                    track.style.scrollSnapType = 'none';
-                    
-                    // requestAnimationFrame empilha a execução após a re-renderização do frame atual.
-                    requestAnimationFrame(() => {
-                        track.scrollTo({ left: 0, behavior: 'auto' });
-                        
-                        // Espera o pulo acontecer de fato antes de devolver o snap
-                        requestAnimationFrame(() => {
-                            track.style.scrollSnapType = 'x mandatory';
-                            isResetting = false;
-                        });
-                    });
-                    
-                    dots.forEach(d => d.classList.remove('active'));
-                    dots[0].classList.add('active');
-                } else {
-                    dots.forEach(d => d.classList.remove('active'));
-                    if (dots[index]) dots[index].classList.add('active');
+                // Atualiza a bolinha ativa
+                dots.forEach(dot => dot.classList.remove('active'));
+                if (dots[index]) dots[index].classList.add('active');
+
+                // LÓGICA DO LOOP:
+                // Se o usuário chegou no último card, espera 2 segundos e volta pro primeiro
+                if (index === slides.length - 1) {
+                    setTimeout(() => {
+                        track.scrollTo({ left: 0, behavior: 'smooth' });
+                    }, 2000); // 2000ms = 2 segundos de pausa no último card
                 }
             }
         });
     }, observerOptions);
 
-    allSlides.forEach(slide => observer.observe(slide));
+    slides.forEach(slide => observer.observe(slide));
 }
 
 // ===================================
