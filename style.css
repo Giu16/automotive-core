@@ -1312,7 +1312,7 @@ button {
 .footer {
     background: var(--dark-color);
     color: rgba(255,255,255,0.8);
-    padding: 0px 0 0;
+    padding: 0;
     position: relative;
 }
 
