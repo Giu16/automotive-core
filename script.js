@@ -231,39 +231,29 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
         slideWidth = slides[0].getBoundingClientRect().width + gap;
     };
 
-    const getMaxIndex = () => {
-        const containerWidth = track.parentElement.getBoundingClientRect().width;
-        const cardsPerView = Math.round(containerWidth / slideWidth) || 1;
-        return Math.max(slides.length - cardsPerView, 0);
-    };
-
     const updateSlider = (index) => {
-        const maxIndex = getMaxIndex();
-        const safe = Math.min(Math.max(index, 0), maxIndex);
-        track.style.transform = `translateX(-${safe * slideWidth}px)`;
+        track.style.transform = `translateX(-${index * slideWidth}px)`;
+
         dots.forEach(dot => dot.classList.remove('active'));
-        dots[safe].classList.add('active');
-        currentIndex = safe;
+        dots[index].classList.add('active');
+
+        currentIndex = index;
     };
 
     measureSlideWidth();
 
-    window.addEventListener('load', () => {
-        measureSlideWidth();
-        updateSlider(0);
-    });
-
     nextBtn.addEventListener('click', () => {
-        const maxIndex = getMaxIndex();
+        const containerWidth = track.parentElement.getBoundingClientRect().width;
+        const cardsPerView = Math.round(containerWidth / slideWidth) || 1;
+        const maxIndex = Math.max(slides.length - cardsPerView, 0);
         let nextIndex = currentIndex + 1;
         if (nextIndex > maxIndex) nextIndex = 0;
         updateSlider(nextIndex);
     });
 
     prevBtn.addEventListener('click', () => {
-        const maxIndex = getMaxIndex();
         let prevIndex = currentIndex - 1;
-        if (prevIndex < 0) prevIndex = maxIndex;
+        if (prevIndex < 0) prevIndex = slides.length - 1;
         updateSlider(prevIndex);
     });
 
@@ -276,64 +266,65 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
         updateSlider(currentIndex);
     });
 
-    // Suporte a swipe — compatível com Safari iOS
+    // Suporte a swipe (arrastar o dedo) no celular
     let touchStartX = 0;
     let touchStartY = 0;
     let touchCurrentX = 0;
     let isSwiping = false;
-    let directionDecided = false;
-    let isHorizontal = false;
+    let isHorizontalSwipe = false;
+
+    const resetSwipeState = () => {
+        isSwiping = false;
+        isHorizontalSwipe = false;
+    };
 
     track.addEventListener('touchstart', (e) => {
-        touchStartX = e.touches[0].clientX;
+     
+       touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         touchCurrentX = touchStartX;
         isSwiping = true;
-        directionDecided = false;
-        isHorizontal = false;
+        isHorizontalSwipe = false;
     }, { passive: true });
 
     track.addEventListener('touchmove', (e) => {
         if (!isSwiping) return;
-        touchCurrentX = e.touches[0].clientX;
-        const diffX = Math.abs(touchCurrentX - touchStartX);
-        const diffY = Math.abs(e.touches[0].clientY - touchStartY);
 
-        if (!directionDecided && (diffX > 5 || diffY > 5)) {
-            directionDecided = true;
-            isHorizontal = diffX > diffY;
+        touchCurrentX = e.touches[0].clientX;
+        const diffX = touchCurrentX - touchStartX;
+        const diffY = e.touches[0].clientY - touchStartY;
+
+        if (Math.abs(diffX) > 5 || Math.abs(diffY) > 5) {
+            isHorizontalSwipe = Math.abs(diffX) > Math.abs(diffY);
         }
-    }, { passive: true });
+
+        if (isHorizontalSwipe) {
+            e.preventDefault();
+        }
+    }, { passive: false });
 
     track.addEventListener('touchend', () => {
         if (!isSwiping) return;
-        isSwiping = false;
 
-        if (isHorizontal) {
+        if (isHorizontalSwipe) {
             const swipeDistance = touchStartX - touchCurrentX;
-            const minSwipe = 40;
-            const maxIndex = getMaxIndex();
+            const minSwipeDistance = 40;
 
-            if (swipeDistance > minSwipe) {
+            if (swipeDistance > minSwipeDistance) {
                 let nextIndex = currentIndex + 1;
-                if (nextIndex > maxIndex) nextIndex = 0;
+                if (nextIndex >= slides.length) nextIndex = 0;
                 updateSlider(nextIndex);
-            } else if (swipeDistance < -minSwipe) {
+            } else if (swipeDistance < -minSwipeDistance) {
                 let prevIndex = currentIndex - 1;
-                if (prevIndex < 0) prevIndex = maxIndex;
+                if (prevIndex < 0) prevIndex = slides.length - 1;
                 updateSlider(prevIndex);
             }
         }
 
-        directionDecided = false;
-        isHorizontal = false;
+        resetSwipeState();
     });
 
-    track.addEventListener('touchcancel', () => {
-        isSwiping = false;
-        directionDecided = false;
-        isHorizontal = false;
-    });
+    track.addEventListener('touchcancel', resetSwipeState);
 }
 
 // ===================================
