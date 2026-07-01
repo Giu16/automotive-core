@@ -231,29 +231,37 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
         slideWidth = slides[0].getBoundingClientRect().width + gap;
     };
 
+    const getMaxIndex = () => {
+        const containerWidth = track.parentElement.getBoundingClientRect().width;
+        const cardsPerView = Math.round(containerWidth / slideWidth) || 1;
+        return Math.max(slides.length - cardsPerView, 0);
+    };
+
     const updateSlider = (index) => {
         track.style.transform = `translateX(-${index * slideWidth}px)`;
-
         dots.forEach(dot => dot.classList.remove('active'));
         dots[index].classList.add('active');
-
         currentIndex = index;
     };
 
     measureSlideWidth();
 
+    window.addEventListener('load', () => {
+        measureSlideWidth();
+        updateSlider(currentIndex);
+    });
+
     nextBtn.addEventListener('click', () => {
-        const containerWidth = track.parentElement.getBoundingClientRect().width;
-        const cardsPerView = Math.round(containerWidth / slideWidth) || 1;
-        const maxIndex = Math.max(slides.length - cardsPerView, 0);
+        const maxIndex = getMaxIndex();
         let nextIndex = currentIndex + 1;
         if (nextIndex > maxIndex) nextIndex = 0;
         updateSlider(nextIndex);
     });
 
     prevBtn.addEventListener('click', () => {
+        const maxIndex = getMaxIndex();
         let prevIndex = currentIndex - 1;
-        if (prevIndex < 0) prevIndex = slides.length - 1;
+        if (prevIndex < 0) prevIndex = maxIndex;
         updateSlider(prevIndex);
     });
 
@@ -279,8 +287,7 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
     };
 
     track.addEventListener('touchstart', (e) => {
-     
-       touchStartX = e.touches[0].clientX;
+        touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         touchCurrentX = touchStartX;
         isSwiping = true;
@@ -289,15 +296,12 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
 
     track.addEventListener('touchmove', (e) => {
         if (!isSwiping) return;
-
         touchCurrentX = e.touches[0].clientX;
         const diffX = touchCurrentX - touchStartX;
         const diffY = e.touches[0].clientY - touchStartY;
-
         if (Math.abs(diffX) > 5 || Math.abs(diffY) > 5) {
             isHorizontalSwipe = Math.abs(diffX) > Math.abs(diffY);
         }
-
         if (isHorizontalSwipe) {
             e.preventDefault();
         }
@@ -305,22 +309,21 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
 
     track.addEventListener('touchend', () => {
         if (!isSwiping) return;
-
         if (isHorizontalSwipe) {
             const swipeDistance = touchStartX - touchCurrentX;
             const minSwipeDistance = 40;
-
             if (swipeDistance > minSwipeDistance) {
+                const maxIndex = getMaxIndex();
                 let nextIndex = currentIndex + 1;
-                if (nextIndex >= slides.length) nextIndex = 0;
+                if (nextIndex > maxIndex) nextIndex = 0;
                 updateSlider(nextIndex);
             } else if (swipeDistance < -minSwipeDistance) {
+                const maxIndex = getMaxIndex();
                 let prevIndex = currentIndex - 1;
-                if (prevIndex < 0) prevIndex = slides.length - 1;
+                if (prevIndex < 0) prevIndex = maxIndex;
                 updateSlider(prevIndex);
             }
         }
-
         resetSwipeState();
     });
 
