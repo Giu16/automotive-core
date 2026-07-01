@@ -333,7 +333,7 @@ button {
     inset: 0;
     background:
         var(--gradient-hero),
-        url('img/pagina\ inicial.jpeg') center/cover no-repeat;
+        url('img/inicial\ pagina.jpeg') center/cover no-repeat;
     z-index: -1;
 }
 /* Brilho sutil de fundo */
