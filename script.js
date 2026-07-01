@@ -213,10 +213,13 @@ const nextBtn = document.querySelector('.carousel-btn.next');
 const prevBtn = document.querySelector('.carousel-btn.prev');
 const dotsContainer = document.querySelector('.carousel-dots');
  
-if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
+if (track && slides.length > 0 && dotsContainer) {
     let currentIndex = 0;
     let slideWidth = 0;
+    let maxIndex = 0;
  
+    // 1. Renderiza os dots dinamicamente
+    dotsContainer.innerHTML = '';
     slides.forEach((_, i) => {
         const dot = document.createElement('button');
         dot.classList.add('carousel-dot');
@@ -225,30 +228,38 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
     });
     const dots = Array.from(dotsContainer.querySelectorAll('.carousel-dot'));
  
+    // 2. Função PURA para medir. Isolada da animação para evitar Reflow no Safari!
     const measureSlideWidth = () => {
+        if (!slides[0]) return;
         const trackStyles = window.getComputedStyle(track);
         const gap = parseFloat(trackStyles.columnGap || trackStyles.gap) || 0;
         slideWidth = slides[0].getBoundingClientRect().width + gap;
+        
+        // Calcula o limite máximo real considerando quantos cards cabem na tela
+        const containerWidth = track.parentElement.getBoundingClientRect().width;
+        const cardsPerView = Math.round(containerWidth / slideWidth) || 1;
+        maxIndex = Math.max(slides.length - cardsPerView, 0);
     };
  
-    // FIX iOS Safari: remede a largura ANTES de todo movimento, não só uma
-    // vez no load. O @import de fonte no CSS carrega assíncrono; o WebKit
-    // pinta com fallback, mede errado, troca a fonte depois e nunca recalcula
-    // — daí o card "quase" alinhado no segundo swipe.
+    // 3. Atualiza o slider centralizando a lógica (Swipe, Clique e Dots usam a mesma base)
     const updateSlider = (index) => {
-        measureSlideWidth();
+        // Lógica de loop contínuo
+        if (index > maxIndex) index = 0;
+        if (index < 0) index = maxIndex;
+ 
         track.style.transform = `translateX(-${index * slideWidth}px)`;
  
+        // Atualiza bolinhas
         dots.forEach(dot => dot.classList.remove('active'));
-        dots[index].classList.add('active');
+        if (dots[index]) dots[index].classList.add('active');
  
         currentIndex = index;
     };
  
+    // Inicialização
     measureSlideWidth();
- 
-    // Reforço: quando a fonte Barlow terminar de carregar, remede e
-    // realinha o slide atual sem mudar de índice.
+    
+    // Reforço para carregamento de fontes customizadas
     if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(() => {
             measureSlideWidth();
@@ -256,55 +267,38 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
         });
     }
  
-    nextBtn.addEventListener('click', () => {
-        const containerWidth = track.parentElement.getBoundingClientRect().width;
-        const cardsPerView = Math.round(containerWidth / slideWidth) || 1;
-        const maxIndex = Math.max(slides.length - cardsPerView, 0);
-        let nextIndex = currentIndex + 1;
-        if (nextIndex > maxIndex) nextIndex = 0;
-        updateSlider(nextIndex);
-    });
- 
-    prevBtn.addEventListener('click', () => {
-        let prevIndex = currentIndex - 1;
-        if (prevIndex < 0) prevIndex = slides.length - 1;
-        updateSlider(prevIndex);
-    });
- 
-    dots.forEach((dot, index) => {
-        dot.addEventListener('click', () => updateSlider(index));
-    });
- 
+    // Recalcula apenas quando a tela mudar de tamanho (com debounce para não travar)
     window.addEventListener('resize', () => {
-        measureSlideWidth();
-        updateSlider(currentIndex);
+        window.requestAnimationFrame(() => {
+            measureSlideWidth();
+            updateSlider(currentIndex);
+        });
     });
  
-    // Suporte a swipe (arrastar o dedo) no celular
+    // 4. Controles de Botões e Dots
+    if (nextBtn) nextBtn.addEventListener('click', () => updateSlider(currentIndex + 1));
+    if (prevBtn) prevBtn.addEventListener('click', () => updateSlider(currentIndex - 1));
+    dots.forEach((dot, index) => dot.addEventListener('click', () => updateSlider(index)));
+ 
+    // 5. O SEGREDO DO SAFARI (Touch Events)
+    // touch-action: pan-y diz ao WebKit: "Deixe o usuário rolar para baixo, 
+    // mas eu (Javascript) cuido dos arrastes horizontais". Evita o touchcancel.
+    track.style.touchAction = 'pan-y';
+ 
     let touchStartX = 0;
     let touchStartY = 0;
     let touchCurrentX = 0;
     let isSwiping = false;
+    let swipeDirectionDecided = false;
     let isHorizontalSwipe = false;
  
-    const resetSwipeState = () => {
-        isSwiping = false;
-        isHorizontalSwipe = false;
-    };
- 
     track.addEventListener('touchstart', (e) => {
-        // FIX iOS Safari: cancela qualquer transição CSS em andamento antes
-        // de iniciar um novo swipe. O WebKit é mais permissivo que o Blink
-        // em disparar touchstart durante uma transition ativa, o que
-        // acumulava dois translateX conflitantes e travava o card "no meio".
-        track.style.transition = 'none';
-        void track.offsetWidth; // força reflow síncrono, descarta a transition anterior
-        track.style.transition = '';
- 
+        // Removida a gambiarra do transition: 'none'. Deixe o CSS fluir.
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         touchCurrentX = touchStartX;
         isSwiping = true;
+        swipeDirectionDecided = false;
         isHorizontalSwipe = false;
     }, { passive: true });
  
@@ -315,37 +309,41 @@ if (track && slides.length > 0 && dotsContainer && nextBtn && prevBtn) {
         const diffX = touchCurrentX - touchStartX;
         const diffY = e.touches[0].clientY - touchStartY;
  
-        if (Math.abs(diffX) > 5 || Math.abs(diffY) > 5) {
-            isHorizontalSwipe = Math.abs(diffX) > Math.abs(diffY);
+        // Trava a decisão da direção no primeiro milissegundo do toque
+        if (!swipeDirectionDecided) {
+            if (Math.abs(diffX) > 5 || Math.abs(diffY) > 5) {
+                isHorizontalSwipe = Math.abs(diffX) > Math.abs(diffY);
+                swipeDirectionDecided = true;
+            }
         }
  
-        if (isHorizontalSwipe) {
+        // Se for lateral, impede a tela de "dançar" (scroll)
+        if (isHorizontalSwipe && e.cancelable) {
             e.preventDefault();
         }
     }, { passive: false });
  
-    track.addEventListener('touchend', () => {
-        if (!isSwiping) return;
- 
-        if (isHorizontalSwipe) {
-            const swipeDistance = touchStartX - touchCurrentX;
-            const minSwipeDistance = 40;
- 
-            if (swipeDistance > minSwipeDistance) {
-                let nextIndex = currentIndex + 1;
-                if (nextIndex >= slides.length) nextIndex = 0;
-                updateSlider(nextIndex);
-            } else if (swipeDistance < -minSwipeDistance) {
-                let prevIndex = currentIndex - 1;
-                if (prevIndex < 0) prevIndex = slides.length - 1;
-                updateSlider(prevIndex);
-            }
+    const handleSwipeEnd = () => {
+        if (!isSwiping || !isHorizontalSwipe) {
+            isSwiping = false;
+            return;
         }
  
-        resetSwipeState();
-    });
+        const swipeDistance = touchStartX - touchCurrentX;
+        const minSwipeDistance = 40; // Sensibilidade
  
-    track.addEventListener('touchcancel', resetSwipeState);
+        if (swipeDistance > minSwipeDistance) {
+            updateSlider(currentIndex + 1); // Deslizou pra esquerda (Próximo)
+        } else if (swipeDistance < -minSwipeDistance) {
+            updateSlider(currentIndex - 1); // Deslizou pra direita (Anterior)
+        }
+ 
+        isSwiping = false;
+    };
+ 
+    // Dispara a finalização tanto no end quanto no cancel (proteção nativa do iOS)
+    track.addEventListener('touchend', handleSwipeEnd);
+    track.addEventListener('touchcancel', () => { isSwiping = false; });
 }
 
 // ===================================
