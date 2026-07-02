@@ -1757,7 +1757,7 @@ button {
 
 @media (max-width: 480px) {
     .section-title { font-size: 1.75rem; }
-    .hero-title { font-size: 3.0rem; }
+    .hero-title { font-size: 2.8rem; }
     .hero-subtitle { font-size: 18px; }
     .stat-number { font-size: 1.5rem; }
     .about-features { grid-template-columns: 1fr; }
