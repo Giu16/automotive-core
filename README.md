@@ -28,9 +28,7 @@ A **Zyron Auto** é uma landing page desenvolvida para uma oficina mecânica esp
 
 O design foi estruturado para conversão: os clientes podem facilmente conhecer a infraestrutura, conferir os diferenciais, ler as avaliações reais e entrar em contato para agendar uma avaliação.
 
-> **Nota:** *<img width="1897" height="862" alt="image" src="https://github.com/user-attachments/assets/96e43a6b-6f66-47a9-af57-1227ffa0c7b7" />
-*  
-> `![Preview do Projeto](link-da-imagem-do-site-aqui)`
+> *<img width="1897" height="862" alt="image" src="https://github.com/user-attachments/assets/96e43a6b-6f66-47a9-af57-1227ffa0c7b7" />*
 
 ## 🚀 Funcionalidades
 
