@@ -50,6 +50,13 @@ O projeto foi construído focado em performance no client-side, utilizando a tr�
 
 Como o projeto utiliza tecnologias nativas do navegador, não há necessidade de builds complexas ou instalação de pacotes.
 
+## 👩‍💻 Autora
+
+Desenvolvido por **Giulia Carneiro** | Desenvolvedora Full Stack.  
+
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/giu16)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/giulia-carneiro)
+
 ```bash
 # Clone este repositório
 $ git clone [https://github.com/giu16/automotive-core.git](https://github.com/giu16/automotive-core.git)
@@ -57,9 +64,3 @@ $ git clone [https://github.com/giu16/automotive-core.git](https://github.com/gi
 # Acesse a pasta do projeto
 $ cd automotive-core
 
-## 👩‍💻 Autora
-
-Desenvolvido por **Giulia Carneiro** | Desenvolvedora Full Stack.  
-
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/giu16)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/SEU_USUARIO_DO_LINKEDIN_AQUI)
