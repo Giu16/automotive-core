@@ -7,7 +7,7 @@
 
 <p align="center">
   <!-- SUBSTITUA O LINK ABAIXO PELO SEU LINK DO VERCEL -->
-  <a href="URL_DO_SEU_VERCEL_AQUI" target="_blank">
+  <a href="https://automotive-core.vercel.app/" target="_blank">
     <img src="https://img.shields.io/badge/Deploy-Live-success?style=for-the-badge&logo=vercel" alt="Deploy Live na Vercel">
   </a>
 </p>
@@ -28,7 +28,8 @@ A **Zyron Auto** é uma landing page desenvolvida para uma oficina mecânica esp
 
 O design foi estruturado para conversão: os clientes podem facilmente conhecer a infraestrutura, conferir os diferenciais, ler as avaliações reais e entrar em contato para agendar uma avaliação.
 
-> **Nota:** *[Insira aqui uma captura de tela do site]*  
+> **Nota:** *<img width="1897" height="862" alt="image" src="https://github.com/user-attachments/assets/96e43a6b-6f66-47a9-af57-1227ffa0c7b7" />
+*  
 > `![Preview do Projeto](link-da-imagem-do-site-aqui)`
 
 ## 🚀 Funcionalidades
@@ -54,7 +55,7 @@ Como o projeto utiliza tecnologias nativas do navegador, não há necessidade de
 
 ```bash
 # Clone este repositório
-$ git clone [https://github.com/SEU_USUARIO/zyron-auto.git](https://github.com/SEU_USUARIO/zyron-auto.git)
+$ git clone [https://github.com/Giu16/zyron-auto.git](https://github.com/Giu16/zyron-auto.git)
 
 # Acesse a pasta do projeto
 $ cd zyron-auto
